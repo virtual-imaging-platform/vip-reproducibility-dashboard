@@ -619,7 +619,8 @@ def update_chart(x_column, y_column, graph_type, color_column, filters, filename
     # check that the data is not empty
     if data.empty:
         return {}
-    graph = charts[graph_type](
+    # if box, dont draw the scatter plot
+    graph = px.box(
         x=data[x_column],
         y=data[y_column],
         title="Choose one",

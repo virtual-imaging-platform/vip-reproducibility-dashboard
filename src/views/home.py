@@ -108,6 +108,13 @@ def layout():
                                                                                                          'zipped '
                                                                                                          'folder)',
                                                                                                 'value': 'x'},
+                                                                                            {
+                                                                                                'label': 'x folders ('
+                                                                                                         'one zipped '
+                                                                                                         'folder with '
+                                                                                                         'multiple '
+                                                                                                         'sub-folders)',
+                                                                                                'value': 'x-folders'},
                                                                                         ],
                                                                                         value='1-1',
                                                                                         style={'width': '100%'},
@@ -586,7 +593,6 @@ def layout():
     )
 
 
-
 @callback(
     Output('upload-modal', 'is_open'),
     Input('upload-open', 'n_clicks'),
@@ -607,7 +613,7 @@ def toggle_upload_modal(n1, n2, is_open):
 )
 def update_upload_data_2_container(type_selected):
     """Update the style of the upload data 2 container"""
-    if type_selected == 'x':
+    if type_selected == 'x' or type_selected == 'x-folders':
         return {'display': 'none'}
     return {'display': 'block'}
 
@@ -631,6 +637,8 @@ def update_compare_btn(_, type1, type2, app, type_selected):
     if type_selected == 'x-y' and type1 == 'zip' and type2 == 'zip':
         return False
     if type_selected == 'x' and type1 == 'zip':
+        return False
+    if type_selected == 'x-folders' and type1 == 'zip' and app == 'lcmodel':
         return False
     return True
 
@@ -687,6 +695,8 @@ def update_href(app, data_type, href):
         data_type_str = 'xy'
     elif data_type == 'x':
         data_type_str = 'x'
+    elif data_type == 'x-folders':
+        data_type_str = 'x'
     href_end = href.split('?')[1]
     href = app_str + '-' + data_type_str + '?' + href_end
     return href
@@ -694,12 +704,13 @@ def update_href(app, data_type, href):
 
 def update_output(content, href, name, data_id, data_type, app):
     """Update the output of the upload data div"""
-    if content is not None and check_type(data_type, name, app):
+    if check_type(data_type, name, app):
         file_extension = name.split('.')[-1]
         if file_extension in ['txt', 'zip', 'nii', 'table'] or (
                 name.split('.')[-2] == 'nii' and file_extension == 'gz'):
             # save the file in the server
-            uuid = save_file_for_comparison(content, name)
+            flatten = False if data_type == 'x-folders' else True
+            uuid = save_file_for_comparison(content, name, flatten)
             # get olds values
             id1 = 'id1=' + href.split('id1=')[1].split('&id2=')[0]
             id2 = 'id2=' + href.split('id2=')[1]
@@ -763,8 +774,7 @@ def filter_exp(version_id, app_id):
                 new_exp_list.append(exp)
 
     options = [{'label': exp['application_version'] + " - " + exp['name'], 'value': str(exp['id']) + '/-/' +
-                                                                                    exp['application_name']} for exp in
-               new_exp_list]
+               exp['application_name']} for exp in new_exp_list]
 
     return options, options
 

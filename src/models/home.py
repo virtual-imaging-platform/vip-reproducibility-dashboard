@@ -123,7 +123,7 @@ def build_wf_json_from_db(results):
     return exp_list
 
 
-def save_file_for_comparison(content, name):
+def save_file_for_comparison(content, name, flatten=True):
     """Save the file for comparison"""
     path = CACHE_FOLDER + "/user_compare/"
     if not os.path.exists(path):
@@ -152,7 +152,8 @@ def save_file_for_comparison(content, name):
             # save files contained in the zip
             with zipfile.ZipFile(io.BytesIO(content)) as z:
                 z.extractall(path + str(uuid))
-                flatten_folder(path + str(uuid))
+                if flatten:
+                    flatten_folder(path + str(uuid))
 
     return uuid
 
@@ -202,6 +203,8 @@ def check_type(data_type, name, app):
     if data_type == '1-1' and app == 'lcmodel':
         return ext == 'table'
     if data_type in ('x-y', 'x'):
+        return ext == 'zip'
+    if data_type == 'x-folders' and app == 'lcmodel':
         return ext == 'zip'
     return False
 

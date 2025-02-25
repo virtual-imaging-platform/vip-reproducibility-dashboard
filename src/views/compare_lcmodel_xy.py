@@ -161,6 +161,7 @@ def update_chart(file1, file2, aggregate1, aggregate2, normalization):
             'x': 'Metabolite',
             'y': 'Rate_Raw',
         },
+        data_frame=data,
         color=data['File'],
     )
     value_file1 = file1 if not aggregate1 else None
