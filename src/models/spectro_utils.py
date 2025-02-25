@@ -99,6 +99,57 @@ def read_file_in_folder_lcmodel(folder, file):
     return data
 
 
+def read_file_in_folders_lcmodel(id, file):
+    """Read a specific file in a folder with few folders and return a dataframe containing all the data with a tag by
+    folder"""
+    path = os.path.join(CACHE_FOLDER, "user_compare", str(id))
+    # assert the case where the user uploads a zipped folder containing a folder with data folders instead of a zipped
+    # folder containing some data folders
+    if not any([file.endswith("table") for file in os.listdir(path)]):
+        folders = os.listdir(path)
+        if len(folders) > 1:
+            raise ValueError("You need to upload a zipper folder containing some data folders or a zipped folder "
+                             "containing a folder with data folders")
+        path = os.path.join(path, folders[0])
+    folders = os.listdir(path)
+    data = pd.DataFrame()
+    for folder in folders:
+        df, diag = get_lcmodel(os.path.join(path, folder, file))
+        df = parse_lcmodel(df, diag)
+        df['Folder'] = folder
+        data = pd.concat([data, df])
+
+    data.reset_index(drop=True, inplace=True)
+    return data
+
+
+def read_folders_lcmodel(id):  # TODO: On garde tous les fichiers même si ils ne sont pas dans tous les dossiers
+    """Read all the files in a folder with few folders and return a dataframe containing all the data with a tag by
+    folder"""
+    path = os.path.join(CACHE_FOLDER, "user_compare", str(id))
+    # assert the case where the user uploads a zipped folder containing a folder with data folders instead of a zipped
+    # folder containing some data folders
+    if not any([file.endswith("table") for file in os.listdir(path)]):
+        folders = os.listdir(path)
+        if len(folders) > 1:
+            raise ValueError("You need to upload a zipper folder containing some data folders or a zipped folder "
+                             "containing a folder with data folders")
+        path = os.path.join(path, folders[0])
+    folders = os.listdir(path)
+    data = pd.DataFrame()
+    for folder in folders:
+        files = os.listdir(os.path.join(path, folder))
+        files = [file for file in files if file.endswith(".table")]
+        for file in files:
+            df, diag = get_lcmodel(os.path.join(path, folder, file))
+            df = parse_lcmodel(df, diag)
+            df['Folder'] = folder
+            data = pd.concat([data, df])
+
+    data.reset_index(drop=True, inplace=True)
+    return data
+
+
 def read_folder_cquest(folder):
     """Read all the files in a folder and return a dataframe containing all the data"""
     path = os.path.join(CACHE_FOLDER, "user_compare", str(folder))
@@ -138,13 +189,13 @@ def normalize_cquest(data):
 
 def normalize_lcmodel(data):
     """Normalize the data using the formula : (x - mean) / std"""
-    data['Rate_Raw'] = pd.to_numeric(data['Rate_Raw'], errors='coerce')
-    data.dropna(subset=['Rate_Raw'], inplace=True)
+    data['Rate_Cr'] = pd.to_numeric(data['Rate_Cr'], errors='coerce')
+    data.dropna(subset=['Rate_Cr'], inplace=True)
 
-    means = data.groupby('Metabolite')['Rate_Raw'].transform('mean')
-    stds = data.groupby('Metabolite')['Rate_Raw'].transform('std')
+    means = data.groupby('Metabolite')['Rate_Cr'].transform('mean')
+    stds = data.groupby('Metabolite')['Rate_Cr'].transform('std')
 
-    data['Rate_Raw'] = (data['Rate_Raw'] - means) / stds
+    data['Rate_Cr'] = (data['Rate_Cr'] - means) / stds
 
 
 def get_description_and_label(signal, workflow, metabolite):
@@ -288,3 +339,27 @@ def generate_url(wf_id, metabolite_name, signal_selected, workflow_selected, nor
           str(signal_selected) + "&workflow_selected=" + str(workflow_selected) + "&normalization=" + \
           str(normalization)
     return url
+
+
+def get_same_files_in_folders(parent_folder, extension='txt'):
+    """Get the files that are common in all the folders"""
+    path = os.path.join(CACHE_FOLDER, "user_compare", str(parent_folder))
+    # assert the case where the user uploads a zipped folder containing a folder with data folders instead of a zipped
+    # folder containing some data folders
+    if not any([file.endswith(f".{extension}") for file in os.listdir(path)]):
+        folders = os.listdir(path)
+        if len(folders) > 1:
+            raise ValueError(
+                "You need to upload a zipper folder containing some data folders or a zipped folder containing a folder with data folders")
+        path = os.path.join(path, folders[0])
+    folders = os.listdir(path)
+    files_list = []
+    for folder in folders:
+        folder_files = os.listdir(os.path.join(path, folder))
+        files_list += [file for file in folder_files if file.endswith(f".{extension}")]
+    # keep only the files that are in all the folders
+    files = []
+    for file in files_list:
+        if all([os.path.exists(os.path.join(path, folder, file)) for folder in folders]):
+            files.append(file)
+    return files

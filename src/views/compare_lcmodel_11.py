@@ -20,32 +20,7 @@ def layout():
             html.H2('Compare LDModel files'),
             dbc.Input(id='data-id1', type='hidden', value=''),
             dbc.Input(id='data-id2', type='hidden', value=''),
-            html.Div(
-                children=[
-                    dbc.Row(
-                        children=[
-                            dbc.Col(
-                                children=[
-                                    html.H4('Normalization'),
-                                    dcc.RadioItems(
-                                        id='normalization-compare-11-lcmodel',
-                                        options=[
-                                            {'label': 'No', 'value': False},
-                                            {'label': 'Yes', 'value': True},
-                                        ],
-                                        value=False,
-                                        labelStyle={'display': 'block'},
-                                    ),
-                                ],
-                                width=3,
-                                className='card-body',
-                            ),
-                        ],
-                        className='card',
-                        style={'flexDirection': 'row'},
-                    ),
-                ]
-            ),
+
             html.Div(
                 children=[
                     dcc.Graph(
@@ -62,10 +37,11 @@ def layout():
 @callback(
     Output('11-chart-compare-lcmodel', 'figure'),
     Input('url', 'pathname'),
-    Input('normalization-compare-11-lcmodel', 'value'),
 )
-def bind_charts(_, normalization):
+def bind_charts(_):
     """Bind the charts to the data"""
+    if len(request.referrer.split('?')) < 2:
+        return {}
     id1, id2 = parse_url(request.referrer)
     data1 = read_lcmodel_file(id1)
     data2 = read_lcmodel_file(id2)
@@ -74,16 +50,13 @@ def bind_charts(_, normalization):
 
     data = pd.concat([data1, data2])
 
-    if normalization:
-        normalize_cquest(data)
-
     fig1 = px.scatter(
         x=data['Metabolite'],
-        y=data['Rate_Raw'],
+        y=data['Rate_Cr'],
         title='Comparison of metabolites',
         labels={
             'x': 'Metabolite',
-            'y': 'Rate_Raw',
+            'y': 'Rate_Cr',
             'color': 'File',
         },
         color=data['File'],

@@ -135,7 +135,6 @@ def update_chart(file1, file2, aggregate1, aggregate2, normalization):
     """Bind the charts to the data"""
     id1, id2 = parse_url(request.referrer)
     if aggregate1:
-        print('aggregate1')
         data1 = read_folder_cquest(id1)
     else:
         file1 = file1 if file1 else get_files_in_folder(id1)[0]
